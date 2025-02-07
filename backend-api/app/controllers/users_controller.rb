@@ -1,5 +1,7 @@
 class UsersController < ApplicationController
+  include Authentication
   before_action :set_user, only: %i[ show update destroy ]
+  before_action :authenticate, only: [:index, :show, :update, :destroy]
 
   # GET /users
   def index

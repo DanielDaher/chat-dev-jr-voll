@@ -1,5 +1,7 @@
 class MessagesController < ApplicationController
+  include Authentication
   before_action :set_message, only: %i[ show update destroy ]
+  before_action :authenticate
 
   # GET /messages
   def index
