@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
-  resources :messages
+  resources :messages do
+    get 'user/:user_id', to: 'messages#by_user', on: :collection
+  end
   resources :users
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
