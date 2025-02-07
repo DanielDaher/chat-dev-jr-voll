@@ -15,7 +15,7 @@ class MessagesController < ApplicationController
     render json: @message
   end
 
-  # GET /messages/user/123
+  # GET /messages/user_id
   def by_user
     @messages = Message.where(user_id: params[:user_id]).or(Message.where(send_to_id: params[:user_id]))
   

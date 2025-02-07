@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   resources :messages do
-    get 'user/:user_id', to: 'messages#by_user', on: :collection
+    get '/:user_id', to: 'messages#by_user', on: :collection
   end
   resources :auths, only: [:create]
   resources :users
