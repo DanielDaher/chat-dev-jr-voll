@@ -13,6 +13,13 @@ class MessagesController < ApplicationController
     render json: @message
   end
 
+  # GET /messages/user/123
+  def by_user
+    @messages = Message.where(user_id: params[:user_id]).or(Message.where(send_to_id: params[:user_id]))
+  
+    render json: @messages
+  end
+
   # POST /messages
   def create
     @message = Message.new(message_params)
@@ -46,6 +53,6 @@ class MessagesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def message_params
-      params.expect(message: [ :text ])
+      params.require(:message).permit(:text, :user_id) # Adicione :user_id
     end
 end
