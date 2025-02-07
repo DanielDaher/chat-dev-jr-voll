@@ -18,9 +18,9 @@ module Authentication
       end
 
       begin
-        JWT.decode(token, hmac_secret, true, { algorithm: 'HS256' })
-        # Se quiser acessar o payload em outros controllers:
-        # @current_user_payload = decoded_token[0]
+        decoded_token = JWT.decode(token, hmac_secret, true, { algorithm: 'HS256' })
+
+        @current_user_payload = decoded_token[0]
       rescue JWT::DecodeError
         render json: { error: 'Unauthorized' }, status: :unauthorized
       end
