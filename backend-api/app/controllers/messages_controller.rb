@@ -33,6 +33,9 @@ class MessagesController < ApplicationController
 
   # POST /messages
   def create
+    user_id = params[:user_id]
+    return unless validate_user_id(user_id)
+
     @message = Message.new(message_params)
 
     if @message.save
