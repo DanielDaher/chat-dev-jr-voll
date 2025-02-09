@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   include Authentication
   before_action :set_user, only: %i[ show update destroy ]
-  before_action :authenticate, only: [:index, :show, :update, :destroy]
+  before_action :authenticate_user, only: [:index, :show, :update, :destroy]
 
   # GET /users
   def index
@@ -49,5 +49,6 @@ class UsersController < ApplicationController
     # Only allow a list of trusted parameters through.
     def user_params
       params.expect(user: [ :name ])
+      params.require(:user).permit(:name, :password)
     end
 end

@@ -3,12 +3,12 @@ module Authentication
   include ActionController::HttpAuthentication::Token::ControllerMethods
 
   included do
-    before_action :authenticate
+    before_action :authenticate_user
   end
 
   private
 
-  def authenticate
+  def authenticate_user
     authenticate_or_request_with_http_token do |token, options|
       hmac_secret = ENV['JWT_SECRET'] || Rails.application.credentials.jwt_secret
 

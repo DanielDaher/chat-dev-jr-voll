@@ -4,7 +4,7 @@ namespace :dev do
     puts "Cadastrando usuários..."
     users = []
     10.times do
-      users << User.create!(name: Faker::Name.name)
+      users << User.create!(name: Faker::Name.name, password: '123456789')
     end
     puts "Usuários cadastrados com sucesso!"
 
