@@ -1,11 +1,14 @@
 <script>
+import Webchat from './WebChat.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getContacts } from '../services/api';
 // import ActionCable from '@rails/actioncable';
 
 export default {
-  
+  components: {
+    Webchat
+  },
   setup() {
     const currentChatId = ref(null);
     // const socket = io(process.env.VUE_APP_API_URL);
@@ -23,13 +26,13 @@ export default {
       const token = localStorage.getItem('tokenChatVollDevJr');
       const userId = localStorage.getItem('userIdChatVollDevJr');
 
-      const { apiContacts } = await getContacts(userId, token);
+      const apiContacts = await getContacts(userId, token);
       contacts.value = apiContacts;
     }
 
     const setCurrentChatId = (contact) => {
       console.log(contact);
-      currentChatId.value = contact.info?.chat.id || contact.id;
+      currentChatId.value = contact.user_id;
       const currentIndex = contacts.value.indexOf(contact);
       contacts.value[currentIndex] = { ...contact, newMessage: false };
     }
@@ -127,7 +130,7 @@ export default {
       </button>
       <div class="dashboard-chats box" v-if="contacts && contacts.length">
         <p class="title is-6">Conversas</p>
-        <div v-for="contact in contacts" :key="contact._id">
+        <div v-for="contact in contacts" :key="contact.id">
           <div
             class="pointer"
             :title="contact.newMessage ? 'Nova mensagem' : 'Clique para iniciar conversa'"
@@ -135,7 +138,7 @@ export default {
           >
             <header class="card-header contact-chat">
               <p class="card-header-title" style="width: 180px">
-                {{ contact.name }}
+                {{ contact.user.name }}
               </p>
               <span v-if="contact.newMessage" class="tag is-primary">!!!</span>
             </header>
@@ -143,7 +146,7 @@ export default {
         </div>
       </div>
     </header>
-    
+    <webchat :chatId="currentChatId" />
   </div>
 </template>
 
