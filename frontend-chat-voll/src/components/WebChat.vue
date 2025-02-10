@@ -1,30 +1,30 @@
 <script>
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { getMessagesPaginated } from '../services/api';
-// import io from "socket.io-client";
+import io from "socket.io-client";
 
 export default {
   props: {
     chatId: Number,
+    myselfId: Number,
+    currentToken: String,
   },
   setup(props) {
-    // const socket = io(process.env.VUE_APP_API_URL);
+    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
     const messages = ref([]);
-    const currentUserId = ref('');
     const newMessage = ref("");
     const isLoading = ref(true);
+
+    const myselfId = computed(() => props.myselfId);
+    const authToken = computed(() => props.currentToken); 
 
 
     const loadMessages = async () => {
       isLoading.value = true;
 
       if (props.chatId) {
-        const userId = localStorage.getItem('userIdChatVollDevJr');
-        const oldMessages = await getMessagesPaginated(userId, props.chatId);
+        const oldMessages = await getMessagesPaginated(myselfId.value, props.chatId, authToken.value);
 
-        console.log('user id do storage: ', typeof userId)
-
-        currentUserId.value = userId;  
         messages.value = oldMessages;
       }
 
@@ -33,22 +33,25 @@ export default {
 
     const sendMessage = () => {
       if (newMessage.value) {
-        // const token = localStorage.getItem('tokenChatVollDevJr');
-        // const socketData = { 
-        //   message: newMessage.value,
-        //   token,
-        //   chatId: props.chatId
-        // }
-        // socket.emit("chatMessage", socketData);
+        const token = authToken.value;
+        const socketData = { 
+          text: newMessage.value,
+          token,
+          userId: myselfId.value,
+          sendToId: props.chatId
+        }
+        socket.emit("message", socketData);
         newMessage.value = "";
       }
     };
 
-    // socket.on("chatMessage", (message) => {
-    //   console.log('socket: ', message)
-    //   if (message.chat.id !== props.chatId) return;
-    //   messages.value.push(message);
-    // });
+    socket.on("message", (message) => {
+      const IreceivedAMessageOnThisChat = message.send_to_id === myselfId.value && message.user_id === props.chatId;
+      const ISendAMessage = message.user_id === myselfId.value && message.send_to_id === props.chatId;
+      if (IreceivedAMessageOnThisChat || ISendAMessage) {
+        messages.value.push(message);
+      }
+    });
 
     watch(() => props.chatId, (newValue) => {
       loadMessages(newValue);
@@ -59,13 +62,12 @@ export default {
     });
 
     onBeforeUnmount(() => {
-      // socket.disconnect();
+      socket.disconnect();
     });
 
     return {
       messages,
       newMessage,
-      currentUserId,
       isLoading,
       sendMessage,
       loadMessages,
@@ -84,7 +86,7 @@ export default {
         <div
           v-for="(message, index) in messages"
           :key="index" 
-          :class="`message ${ message.user_id === currentUserId ? 'author-message' : 'received-message' }`"
+          :class="`message ${ message.user_id === myselfId ? 'author-message' : 'received-message' }`"
         >
             {{ message.text }}
         </div>

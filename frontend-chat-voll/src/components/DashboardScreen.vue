@@ -1,9 +1,9 @@
 <script>
+import io from 'socket.io-client';
 import Webchat from './WebChat.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getContacts } from '../services/api';
-// import ActionCable from '@rails/actioncable';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 export default {
   components: {
@@ -11,108 +11,80 @@ export default {
   },
   setup() {
     const currentChatId = ref(null);
-    // const socket = io(process.env.VUE_APP_API_URL);
+    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
     const contacts = ref([]);
     const router = useRouter();
-    // let cable = inject('$cable');
-    // let subscription = null;
+    const myselfId = ref(null);
+    const currentToken = ref(null);
 
     const makeLogout = () => {
       localStorage.removeItem('tokenChatVollDevJr');
       return router.push('/');
     }
 
+    const setMyselfId = () => {
+      const userId = localStorage.getItem('userIdChatVollDevJr');
+      console.log('user id : ', userId)
+      myselfId.value = Number(userId);
+    }
+
     const loadContacts = async () => {
       const token = localStorage.getItem('tokenChatVollDevJr');
-      const userId = localStorage.getItem('userIdChatVollDevJr');
+      currentToken.value = token;
 
-      const apiContacts = await getContacts(userId, token);
+      const apiContacts = await getContacts(myselfId.value, token);
       contacts.value = apiContacts;
     }
 
     const setCurrentChatId = (contact) => {
       console.log(contact);
+      console.log('my self id: ', myselfId.value)
       currentChatId.value = contact.user_id;
       const currentIndex = contacts.value.indexOf(contact);
       contacts.value[currentIndex] = { ...contact, newMessage: false };
     }
 
-    onUnmounted(() => {
-      // cable.unregisterChannels(channels);
-      // cable.unsubscribe("ChatChannel");
+    onBeforeUnmount(() => {
+      socket.disconnect();
     });
 
     onMounted(() => {
+      setMyselfId();
       loadContacts();
-      // nextTick(() => {
-      //   if (cable) {
-      //     cable.registerChannels(channels);
-      //     cable.subscribe(
-      //       {
-      //         channel: "ChatChannel",
-      //         room: "public"
-      //       },
-      //       "chat_channel_public"
-      //     );
-    
-      //     cable.subscribe(
-      //       {
-      //         channel: "ChatChannel",
-      //         room: "private"
-      //       },
-      //       "chat_channel_private"
-      //     );
-      //   }
-      // })
     });
 
-    // const channels = {
-    //   chat_channel_public: {
-    //     connected() {
-    //       console.log("I am connected to the public chat channel.");
-    //     },
-    //   },
-    //   chat_channel_private: {
-    //     connected() {
-    //       console.log("I am connected to the private chat channel.");
-    //     },
-    //   },
-    // };
+    socket.on("message", ({ user, send_to }) => {
+      const IBelongToChat = myselfId.value === user.id || myselfId.value === send_to.id;
 
-    // socket.on("telegramMessage", ({ chat }) => {
-    //   const oldContact = contacts.value.find((contact) => contact._id === chat.id);
-    //   const newContact = chat;
+      if (IBelongToChat) {
+        const socketContact = user.id === myselfId.value ? send_to : user;
+  
+        const oldContact = contacts.value.find((contact) => contact.user.name === socketContact.name);
+        const newContact = { user };
+  
+        if (oldContact) {
+          const currentIndex = contacts.value.indexOf(oldContact);
+          contacts.value[currentIndex] = { ...oldContact, newMessage: true }
+        }
+        
+        if (!oldContact) {
+          contacts.value.push(newContact);
+        }
+      }
 
-    //   if (oldContact) {
-    //     const currentIndex = contacts.value.indexOf(oldContact);
-    //     contacts.value[currentIndex] = { ...oldContact, newMessage: true }
-    //   }
-      
-    //   if (!oldContact) {
-    //     contacts.value.push(newContact);
-    //   }
-    // });
+    });
 
-    // const connectToActionCable = () => {
-    //   cable = ActionCable.createConsumer(process.env.VUE_APP_CABLE_URL);
-
-    //   subscription = cable.subscriptions.create("ChatChannel", {
-    //     received(data) {
-    //       const chat = data.chat;
-    //       const oldContact = contacts.value.find((contact) => contact._id === chat.id);
-    //       const newContact = chat;
-
-    //       if (oldContact) {
-    //         const currentIndex = contacts.value.indexOf(oldContact);
-    //         contacts.value[currentIndex] = { ...oldContact, newMessage: true };
-    //       } else {
-    //         contacts.value.push(newContact);
-    //       }
-    //     }
-    //   });
-    // };
-
-    return { makeLogout, loadContacts, setCurrentChatId, contacts, currentChatId, router };
+    return {
+      makeLogout,
+      loadContacts,
+      setCurrentChatId,
+      setMyselfId,
+      currentToken,
+      myselfId,
+      contacts,
+      currentChatId,
+      router
+    };
   },
 };
 
@@ -146,7 +118,7 @@ export default {
         </div>
       </div>
     </header>
-    <webchat :chatId="currentChatId" />
+    <webchat v-if="myselfId" :chatId="currentChatId" :myselfId="myselfId" :currentToken="currentToken" />
   </div>
 </template>
 
