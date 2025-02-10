@@ -24,13 +24,13 @@ async function loginOrCreateUser({ userName, password, endpoint }) {
   }
 }
 
-async function getContacts(userId, token) {
+async function getContacts(token) {
   const axiosConfig = {
     headers: {
       'Authorization': `Bearer ${token}`
     }
   };
-  const apiUrl = `${axios.defaults.baseURL}/messages/${userId}`;
+  const apiUrl = `${axios.defaults.baseURL}/find_contacts`;
   console.log('api url: ', apiUrl)
 
   try {

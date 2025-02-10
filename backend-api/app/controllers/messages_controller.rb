@@ -31,6 +31,15 @@ class MessagesController < ApplicationController
     render json: @messages
   end
 
+  def find_contacts
+    current_user_id = @current_user_payload["user_id"]
+    @user = User.find(current_user_id)
+
+    @interacted_users = @user.interacted_with_users
+
+    render json: @interacted_users
+  end
+
   # POST /messages
   def create
     user_id = params[:user_id]

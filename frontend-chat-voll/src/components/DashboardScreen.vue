@@ -32,14 +32,12 @@ export default {
       const token = localStorage.getItem('tokenChatVollDevJr');
       currentToken.value = token;
 
-      const apiContacts = await getContacts(myselfId.value, token);
+      const apiContacts = await getContacts(token);
       contacts.value = apiContacts;
     }
 
     const setCurrentChatId = (contact) => {
-      console.log(contact);
-      console.log('my self id: ', myselfId.value)
-      currentChatId.value = contact.user_id;
+      currentChatId.value = contact.id;
       const currentIndex = contacts.value.indexOf(contact);
       contacts.value[currentIndex] = { ...contact, newMessage: false };
     }
@@ -59,7 +57,7 @@ export default {
       if (IBelongToChat) {
         const socketContact = user.id === myselfId.value ? send_to : user;
   
-        const oldContact = contacts.value.find((contact) => contact.user.name === socketContact.name);
+        const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
         const newContact = { user };
   
         if (oldContact) {
@@ -110,7 +108,7 @@ export default {
           >
             <header class="card-header contact-chat">
               <p class="card-header-title" style="width: 180px">
-                {{ contact.user.name }}
+                {{ contact.name }}
               </p>
               <span v-if="contact.newMessage" class="tag is-primary">!!!</span>
             </header>
