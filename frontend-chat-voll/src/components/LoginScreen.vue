@@ -21,6 +21,7 @@ export default {
 
       if (apiData.token) {
         localStorage.setItem('tokenChatVollDevJr', apiData.token);
+        localStorage.setItem('userIdChatVollDevJr', apiData.user_id);
         return router.push('/dashboard');
       } 
 

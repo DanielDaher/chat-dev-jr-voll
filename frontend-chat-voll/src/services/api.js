@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 axios.defaults.baseURL = process.env.VUE_APP_API_URL;
+// const authToken = localStorage.getItem('tokenChatVollDevJr');
 
 const validateFields = ({ userName, password }) => {
   if (userName.length < 2 || password.length < 4) return false;
@@ -24,6 +25,24 @@ async function loginOrCreateUser({ userName, password, endpoint }) {
   }
 }
 
+async function getContacts(userId, token) {
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  };
+  const apiUrl = `${axios.defaults.baseURL}/messages/${userId}`;
+  console.log('api url: ', apiUrl)
+
+  try {
+    const APIResponse = await axios.get(apiUrl, axiosConfig);
+    return APIResponse.data;
+  } catch (error) {
+    console.error('Erro na requisição: ', error);
+    return { apiContacts: [] }
+  }
+}
 
 
-export { loginOrCreateUser };
+
+export { loginOrCreateUser, getContacts };
