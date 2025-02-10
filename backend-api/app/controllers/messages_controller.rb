@@ -1,7 +1,7 @@
 class MessagesController < ApplicationController
   include Authentication
   before_action :set_message, only: %i[ update destroy ]
-  before_action :authenticate
+  before_action :authenticate_user
 
   # GET /messages
   # def index
@@ -67,7 +67,7 @@ class MessagesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def message_params
-      params.require(:message).permit(:text, :user_id, :send_to_id)
+      params.require(:message).permit(:text, :user_id, :name, :send_to_id)
     end
 
     def validate_user_id(user_id_param)
@@ -75,7 +75,7 @@ class MessagesController < ApplicationController
 
       current_user_id = user_id_param.to_i
       
-      unless @current_user_payload == current_user_id
+      unless @current_user_payload["user_id"] == current_user_id
         render json: { error: 'Forbidden' }, status: :forbidden
         return false
       end
