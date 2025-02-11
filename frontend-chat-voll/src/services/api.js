@@ -42,6 +42,25 @@ async function getContacts(token) {
   }
 }
 
+async function getContactByName(token, name) {
+  console.log('oh o token aqui: ', token);
+  const axiosConfig = {
+    params: { name },
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  };
+  const apiUrl = `${axios.defaults.baseURL}/users/find_by_name`;
+
+  try {
+    const APIResponse = await axios.get(apiUrl, axiosConfig);
+    return APIResponse.data;
+  } catch (error) {
+    console.error('Erro na requisição: ', error);
+    return { error: 'Usuário não encontrado' }
+  }
+}
+
 async function getMessagesPaginated(user_id, send_to_id, authToken) {
   const axiosConfig = {
     params: { send_to_id },
@@ -60,4 +79,4 @@ async function getMessagesPaginated(user_id, send_to_id, authToken) {
   }
 }
 
-export { loginOrCreateUser, getContacts, getMessagesPaginated };
+export { loginOrCreateUser, getContacts, getMessagesPaginated, getContactByName };

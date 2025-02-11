@@ -2,9 +2,17 @@ Rails.application.routes.draw do
   resources :messages do
     get '/:user_id', to: 'messages#by_user', on: :collection
   end
+
   get '/find_contacts', to: 'messages#find_contacts'
+
   resources :auths, only: [:create]
-  resources :users
+
+  resources :users do
+    collection do
+      get 'find_by_name'
+    end
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   include Authentication
   before_action :set_user, only: %i[ show update destroy ]
-  before_action :authenticate_user, only: [:index, :show, :update, :destroy]
+  before_action :authenticate_user, only: [:index, :show, :update, :destroy, :find_by_name]
 
   # GET /users
   def index
@@ -13,6 +13,16 @@ class UsersController < ApplicationController
   # GET /users/1
   def show
     render json: @user
+  end
+
+  def find_by_name
+    user = User.find_by(name: params[:name])
+
+    if user
+      render json: user
+    else
+      render json: { error: "User not found" }, status: :not_found
+    end
   end
 
   # POST /users

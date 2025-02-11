@@ -1,21 +1,23 @@
 <script>
+import Swal from 'sweetalert2'
 import io from 'socket.io-client';
 import Webchat from './WebChat.vue';
 import { useRouter } from 'vue-router';
-import { getContacts } from '../services/api';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { getContacts, getContactByName } from '../services/api';
 
 export default {
   components: {
     Webchat
   },
   setup() {
-    const currentChatId = ref(null);
-    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
     const contacts = ref([]);
     const router = useRouter();
     const myselfId = ref(null);
     const currentToken = ref(null);
+    const newContactName = ref("");
+    const currentChatId = ref(null);
+    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
 
     const makeLogout = () => {
       localStorage.removeItem('tokenChatVollDevJr');
@@ -41,6 +43,27 @@ export default {
       const currentIndex = contacts.value.indexOf(contact);
       contacts.value[currentIndex] = { ...contact, newMessage: false };
     }
+
+    const startNewChat = async () => {
+      if (!newContactName.value.trim()) return;
+
+      const existingContact = await getContactByName(currentToken.value, newContactName.value);
+
+      if (existingContact.error) {
+        Swal.fire({
+          title: existingContact.error,
+          timer: 2000,
+          showConfirmButton: true,
+          timerProgressBar: true,
+        });
+      }
+
+      if (existingContact.name) {
+        newContactName.value = "";
+        contacts.value.push({ ...existingContact, newMessage: true })
+        return setCurrentChatId(existingContact);
+      }      
+    };
 
     onBeforeUnmount(() => {
       socket.disconnect();
@@ -77,6 +100,8 @@ export default {
       loadContacts,
       setCurrentChatId,
       setMyselfId,
+      startNewChat,
+      newContactName,
       currentToken,
       myselfId,
       contacts,
@@ -98,6 +123,21 @@ export default {
       >
         Sair
       </button>
+
+      <div class="new-chat">
+        <input 
+          v-model="newContactName" 
+          class="input"
+          placeholder="Digite o nome do contato"
+        />
+        <button 
+          class="button is-primary" 
+          @click="startNewChat"
+        >
+          Iniciar conversa
+        </button>
+      </div>
+
       <div class="dashboard-chats box" v-if="contacts && contacts.length">
         <p class="title is-6">Conversas</p>
         <div v-for="contact in contacts" :key="contact.id">
@@ -155,5 +195,11 @@ export default {
 
   .pointer {
     cursor: pointer
+  }
+
+  .new-chat {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
   }
 </style>
