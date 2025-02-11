@@ -60,7 +60,7 @@ export default {
 
       if (existingContact.name) {
         newContactName.value = "";
-        contacts.value.push({ ...existingContact, newMessage: true })
+        contacts.value.push({ ...existingContact, newMessage: false })
         return setCurrentChatId(existingContact);
       }      
     };
@@ -85,7 +85,9 @@ export default {
         const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
         const newContact = { user };
   
-        if (oldContact && ImReceivingThisMessage) {
+        const CurentChatIsOpenOnMyScreen = currentChatId.value === user.id;
+        
+        if (oldContact && ImReceivingThisMessage && !CurentChatIsOpenOnMyScreen) {
           const currentIndex = contacts.value.indexOf(oldContact);
           contacts.value[currentIndex] = { ...oldContact, newMessage: true }
         }
@@ -148,7 +150,9 @@ export default {
             :title="contact.newMessage ? 'Nova mensagem' : 'Clique para iniciar conversa'"
             @click="setCurrentChatId(contact)"
           >
-            <header class="card-header contact-chat">
+            <header
+              :class="`card-header contact-chat ${ currentChatId === contact.id && 'selected-card' }`"
+            >
               <p class="card-header-title" style="width: 180px">
                 {{ contact.name }}
               </p>
@@ -188,6 +192,10 @@ export default {
   .contact-chat {
     display: flex;
     justify-content: space-between;
+  }
+
+  .selected-card {
+    background-color: #00d1b2;
   }
 
   .logout-button, .telegram-button {
