@@ -75,7 +75,9 @@ export default {
     });
 
     socket.on("message", ({ user, send_to }) => {
-      const IBelongToChat = myselfId.value === user.id || myselfId.value === send_to.id;
+      const ImSendingThisMessage = myselfId.value === user.id;
+      const ImReceivingThisMessage =  myselfId.value === send_to.id;
+      const IBelongToChat = ImSendingThisMessage || ImReceivingThisMessage;
 
       if (IBelongToChat) {
         const socketContact = user.id === myselfId.value ? send_to : user;
@@ -83,7 +85,7 @@ export default {
         const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
         const newContact = { user };
   
-        if (oldContact) {
+        if (oldContact && ImReceivingThisMessage) {
           const currentIndex = contacts.value.indexOf(oldContact);
           contacts.value[currentIndex] = { ...oldContact, newMessage: true }
         }
