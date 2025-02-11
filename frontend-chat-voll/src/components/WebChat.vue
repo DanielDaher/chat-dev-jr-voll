@@ -1,5 +1,5 @@
 <script>
-import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
 import { getMessagesPaginated } from '../services/api';
 import io from "socket.io-client";
 
@@ -14,21 +14,24 @@ export default {
     const messages = ref([]);
     const newMessage = ref("");
     const isLoading = ref(true);
+    const messageContainer = ref(null);
 
     const myselfId = computed(() => props.myselfId);
     const authToken = computed(() => props.currentToken); 
-
 
     const loadMessages = async () => {
       isLoading.value = true;
 
       if (props.chatId) {
         const oldMessages = await getMessagesPaginated(myselfId.value, props.chatId, authToken.value);
-
         messages.value = oldMessages;
       }
 
       isLoading.value = false;
+
+      nextTick(() => {
+        scrollToBottom();
+      });
     };
 
     const sendMessage = () => {
@@ -50,8 +53,18 @@ export default {
       const ISendAMessage = message.user_id === myselfId.value && message.send_to_id === props.chatId;
       if (IreceivedAMessageOnThisChat || ISendAMessage) {
         messages.value.push(message);
+
+        nextTick(() => {
+          scrollToBottom();
+        });
       }
     });
+
+    const scrollToBottom = () => {
+      if (messageContainer.value) {
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      }
+    };
 
     watch(() => props.chatId, (newValue) => {
       loadMessages(newValue);
@@ -71,6 +84,7 @@ export default {
       isLoading,
       sendMessage,
       loadMessages,
+      messageContainer,
     };
   },
 };
@@ -82,7 +96,7 @@ export default {
 
     <div v-else class="chat">
 
-      <div v-if="!isLoading" class="chat-messages">
+      <div v-if="!isLoading" class="chat-messages" ref="messageContainer">
         <div
           v-for="(message, index) in messages"
           :key="index" 
