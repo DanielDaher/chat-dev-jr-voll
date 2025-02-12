@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 axios.defaults.baseURL = process.env.VUE_APP_API_URL;
-const authToken = localStorage.getItem('tokenChatVollDevJr');
 
 const validateFields = ({ userName, password }) => {
   if (userName.length < 2 || password.length < 4) return false;
@@ -25,14 +24,13 @@ async function loginOrCreateUser({ userName, password, endpoint }) {
   }
 }
 
-async function getContacts(userId, token) {
+async function getContacts(token) {
   const axiosConfig = {
     headers: {
       'Authorization': `Bearer ${token}`
     }
   };
-  const apiUrl = `${axios.defaults.baseURL}/messages/${userId}`;
-  console.log('api url: ', apiUrl)
+  const apiUrl = `${axios.defaults.baseURL}/find_contacts`;
 
   try {
     const APIResponse = await axios.get(apiUrl, axiosConfig);
@@ -43,9 +41,27 @@ async function getContacts(userId, token) {
   }
 }
 
-async function getMessagesPaginated(user_id, send_to_id) {
+async function getContactByName(token, name) {
   const axiosConfig = {
-    params: { send_to_id },
+    params: { name },
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  };
+  const apiUrl = `${axios.defaults.baseURL}/users/find_by_name`;
+
+  try {
+    const APIResponse = await axios.get(apiUrl, axiosConfig);
+    return APIResponse.data;
+  } catch (error) {
+    console.error('Erro na requisição: ', error);
+    return { error: 'Usuário não encontrado' }
+  }
+}
+
+async function getMessagesPaginated(user_id, send_to_id, authToken, pageNumber) {
+  const axiosConfig = {
+    params: { send_to_id, "page[number]": pageNumber },
     headers: {
       'Authorization': `Bearer ${authToken}`
     }
@@ -61,4 +77,21 @@ async function getMessagesPaginated(user_id, send_to_id) {
   }
 }
 
-export { loginOrCreateUser, getContacts, getMessagesPaginated };
+async function uploadFile(user_id, send_to_id, authToken, formData) {
+  const axiosConfig = {
+    params: { send_to_id, user_id },
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  };
+  const apiUrl = `${axios.defaults.baseURL}/uploads`;
+  try {
+    const response = await axios.post(apiUrl, formData, axiosConfig);
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro no upload:", error);
+  }
+}
+
+export { loginOrCreateUser, getContacts, getMessagesPaginated, getContactByName, uploadFile };

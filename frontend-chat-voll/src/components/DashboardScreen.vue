@@ -1,118 +1,116 @@
 <script>
+import Swal from 'sweetalert2'
+import io from 'socket.io-client';
 import Webchat from './WebChat.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getContacts } from '../services/api';
-// import ActionCable from '@rails/actioncable';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { getContacts, getContactByName } from '../services/api';
 
 export default {
   components: {
     Webchat
   },
   setup() {
-    const currentChatId = ref(null);
-    // const socket = io(process.env.VUE_APP_API_URL);
     const contacts = ref([]);
     const router = useRouter();
-    // let cable = inject('$cable');
-    // let subscription = null;
+    const myselfId = ref(null);
+    const currentToken = ref(null);
+    const newContactName = ref("");
+    const currentChatId = ref(null);
+    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
 
     const makeLogout = () => {
       localStorage.removeItem('tokenChatVollDevJr');
       return router.push('/');
     }
 
+    const setMyselfId = () => {
+      const userId = localStorage.getItem('userIdChatVollDevJr');
+      myselfId.value = Number(userId);
+    }
+
     const loadContacts = async () => {
       const token = localStorage.getItem('tokenChatVollDevJr');
-      const userId = localStorage.getItem('userIdChatVollDevJr');
+      currentToken.value = token;
 
-      const apiContacts = await getContacts(userId, token);
+      const apiContacts = await getContacts(token);
       contacts.value = apiContacts;
     }
 
     const setCurrentChatId = (contact) => {
-      console.log(contact);
-      currentChatId.value = contact.user_id;
+      currentChatId.value = contact.id;
       const currentIndex = contacts.value.indexOf(contact);
       contacts.value[currentIndex] = { ...contact, newMessage: false };
     }
 
-    onUnmounted(() => {
-      // cable.unregisterChannels(channels);
-      // cable.unsubscribe("ChatChannel");
+    const startNewChat = async () => {
+      if (!newContactName.value.trim()) return;
+
+      const existingContact = await getContactByName(currentToken.value, newContactName.value);
+
+      if (existingContact.error) {
+        Swal.fire({
+          title: existingContact.error,
+          timer: 2000,
+          showConfirmButton: true,
+          timerProgressBar: true,
+        });
+      }
+
+      if (existingContact.name) {
+        newContactName.value = "";
+        contacts.value.push({ ...existingContact, newMessage: false })
+        return setCurrentChatId(existingContact);
+      }      
+    };
+
+    onBeforeUnmount(() => {
+      socket.disconnect();
     });
 
     onMounted(() => {
+      setMyselfId();
       loadContacts();
-      // nextTick(() => {
-      //   if (cable) {
-      //     cable.registerChannels(channels);
-      //     cable.subscribe(
-      //       {
-      //         channel: "ChatChannel",
-      //         room: "public"
-      //       },
-      //       "chat_channel_public"
-      //     );
-    
-      //     cable.subscribe(
-      //       {
-      //         channel: "ChatChannel",
-      //         room: "private"
-      //       },
-      //       "chat_channel_private"
-      //     );
-      //   }
-      // })
     });
 
-    // const channels = {
-    //   chat_channel_public: {
-    //     connected() {
-    //       console.log("I am connected to the public chat channel.");
-    //     },
-    //   },
-    //   chat_channel_private: {
-    //     connected() {
-    //       console.log("I am connected to the private chat channel.");
-    //     },
-    //   },
-    // };
+    socket.on("message", ({ user, send_to }) => {
+      const ImSendingThisMessage = myselfId.value === user.id;
+      const ImReceivingThisMessage =  myselfId.value === send_to.id;
+      const IBelongToChat = ImSendingThisMessage || ImReceivingThisMessage;
 
-    // socket.on("telegramMessage", ({ chat }) => {
-    //   const oldContact = contacts.value.find((contact) => contact._id === chat.id);
-    //   const newContact = chat;
+      if (IBelongToChat) {
+        const socketContact = user.id === myselfId.value ? send_to : user;
+  
+        const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
+        const newContact = { user };
+  
+        const CurentChatIsOpenOnMyScreen = currentChatId.value === user.id;
+        
+        if (oldContact && ImReceivingThisMessage && !CurentChatIsOpenOnMyScreen) {
+          const currentIndex = contacts.value.indexOf(oldContact);
+          contacts.value[currentIndex] = { ...oldContact, newMessage: true }
+        }
+        
+        if (!oldContact) {
+          contacts.value.push(newContact);
+        }
+      }
 
-    //   if (oldContact) {
-    //     const currentIndex = contacts.value.indexOf(oldContact);
-    //     contacts.value[currentIndex] = { ...oldContact, newMessage: true }
-    //   }
-      
-    //   if (!oldContact) {
-    //     contacts.value.push(newContact);
-    //   }
-    // });
+    });
 
-    // const connectToActionCable = () => {
-    //   cable = ActionCable.createConsumer(process.env.VUE_APP_CABLE_URL);
-
-    //   subscription = cable.subscriptions.create("ChatChannel", {
-    //     received(data) {
-    //       const chat = data.chat;
-    //       const oldContact = contacts.value.find((contact) => contact._id === chat.id);
-    //       const newContact = chat;
-
-    //       if (oldContact) {
-    //         const currentIndex = contacts.value.indexOf(oldContact);
-    //         contacts.value[currentIndex] = { ...oldContact, newMessage: true };
-    //       } else {
-    //         contacts.value.push(newContact);
-    //       }
-    //     }
-    //   });
-    // };
-
-    return { makeLogout, loadContacts, setCurrentChatId, contacts, currentChatId, router };
+    return {
+      makeLogout,
+      loadContacts,
+      setCurrentChatId,
+      setMyselfId,
+      startNewChat,
+      newContactName,
+      currentToken,
+      myselfId,
+      contacts,
+      currentChatId,
+      router
+    };
   },
 };
 
@@ -128,6 +126,22 @@ export default {
       >
         Sair
       </button>
+
+      <div class="new-chat">
+        <input 
+          v-model="newContactName" 
+          class="input"
+          @keyup.enter="startNewChat"
+          placeholder="Digite o nome do contato"
+        />
+        <button 
+          class="button is-primary" 
+          @click="startNewChat"
+        >
+          Iniciar conversa
+        </button>
+      </div>
+
       <div class="dashboard-chats box" v-if="contacts && contacts.length">
         <p class="title is-6">Conversas</p>
         <div v-for="contact in contacts" :key="contact.id">
@@ -136,9 +150,11 @@ export default {
             :title="contact.newMessage ? 'Nova mensagem' : 'Clique para iniciar conversa'"
             @click="setCurrentChatId(contact)"
           >
-            <header class="card-header contact-chat">
+            <header
+              :class="`card-header contact-chat ${ currentChatId === contact.id && 'selected-card' }`"
+            >
               <p class="card-header-title" style="width: 180px">
-                {{ contact.user.name }}
+                {{ contact.name }}
               </p>
               <span v-if="contact.newMessage" class="tag is-primary">!!!</span>
             </header>
@@ -146,7 +162,7 @@ export default {
         </div>
       </div>
     </header>
-    <webchat :chatId="currentChatId" />
+    <webchat v-if="myselfId" :chatId="currentChatId" :myselfId="myselfId" :currentToken="currentToken" />
   </div>
 </template>
 
@@ -178,6 +194,10 @@ export default {
     justify-content: space-between;
   }
 
+  .selected-card {
+    background-color: #00d1b2;
+  }
+
   .logout-button, .telegram-button {
     margin: 5px;
     width: 120px;
@@ -185,5 +205,11 @@ export default {
 
   .pointer {
     cursor: pointer
+  }
+
+  .new-chat {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
   }
 </style>

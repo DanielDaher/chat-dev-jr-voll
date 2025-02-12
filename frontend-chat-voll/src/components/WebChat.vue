@@ -1,74 +1,158 @@
 <script>
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
-import { getMessagesPaginated } from '../services/api';
-// import io from "socket.io-client";
+import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
+import { getMessagesPaginated, uploadFile } from '../services/api';
+import io from "socket.io-client";
 
 export default {
   props: {
     chatId: Number,
+    myselfId: Number,
+    currentToken: String,
   },
   setup(props) {
-    // const socket = io(process.env.VUE_APP_API_URL);
+    const socket = io(process.env.VUE_APP_WEBSOCKET_URL);
     const messages = ref([]);
-    const currentUserId = ref('');
     const newMessage = ref("");
     const isLoading = ref(true);
+    const messageContainer = ref(null);
+    const messagesCurrentPage = ref(1);
+    const selectedFile = ref(null);
 
+    const myselfId = computed(() => props.myselfId);
+    const authToken = computed(() => props.currentToken);
+    
+    const resetMessages = () => {
+      messages.value = [];
+      messagesCurrentPage.value = 1;
+    }
+    
+    const loadMoreMessages = async () => {
+      const shouldScrollToBottom = false;
 
-    const loadMessages = async () => {
+      messagesCurrentPage.value = messagesCurrentPage.value + 1;
+      await loadMessages(shouldScrollToBottom);
+    }
+
+    const loadMessages = async (shouldScrollToBottom=true) => {
       isLoading.value = true;
 
       if (props.chatId) {
-        const userId = localStorage.getItem('userIdChatVollDevJr');
-        const oldMessages = await getMessagesPaginated(userId, props.chatId);
+        const oldMessages = await getMessagesPaginated(
+          myselfId.value,
+          props.chatId,
+          authToken.value,
+          messagesCurrentPage.value
+        );
 
-        console.log('user id do storage: ', typeof userId)
-
-        currentUserId.value = userId;  
-        messages.value = oldMessages;
+        messages.value.unshift(...oldMessages);
       }
 
       isLoading.value = false;
+      if (shouldScrollToBottom) {
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
     };
 
     const sendMessage = () => {
       if (newMessage.value) {
-        // const token = localStorage.getItem('tokenChatVollDevJr');
-        // const socketData = { 
-        //   message: newMessage.value,
-        //   token,
-        //   chatId: props.chatId
-        // }
-        // socket.emit("chatMessage", socketData);
+        const token = authToken.value;
+        const socketData = { 
+          text: newMessage.value,
+          token,
+          userId: myselfId.value,
+          sendToId: props.chatId
+        }
+        socket.emit("message", socketData);
         newMessage.value = "";
       }
     };
 
-    // socket.on("chatMessage", (message) => {
-    //   console.log('socket: ', message)
-    //   if (message.chat.id !== props.chatId) return;
-    //   messages.value.push(message);
-    // });
+    const scrollToBottom = () => {
+      if (messageContainer.value) {
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      }
+    };
 
-    watch(() => props.chatId, (newValue) => {
-      loadMessages(newValue);
-    });
+    const resetSelectedFile = () => {
+      selectedFile.value = null;
+    }
+
+    const setFileUpload = (event) => {
+      selectedFile.value = event.target.files[0];
+    };
+
+    const uploadCurrentFile = async () => {
+      if (!selectedFile.value) return;
+
+      const formData = new FormData();
+      formData.append("file", selectedFile.value);
+
+      const response = await uploadFile(myselfId.value, props.chatId, authToken.value, formData);
+      console.log('response:   ', response)
+
+      const socketData = { 
+        text: response.url,
+        token: authToken.value,
+        userId: myselfId.value,
+        sendToId: props.chatId,
+        isMedia: true,
+      }
+        
+      socket.emit("message", socketData);
+
+      resetSelectedFile();
+    };
 
     onMounted(() => {
-      loadMessages(props.chatId);
+      loadMessages();
     });
 
     onBeforeUnmount(() => {
-      // socket.disconnect();
+      socket.disconnect();
+    });
+
+    // eslint-disable-next-line no-unused-vars
+    watch(() => props.chatId, (newValue) => {
+      resetMessages();
+      loadMessages();
+      resetSelectedFile();
+    });
+
+    socket.on("message", (message) => {
+      const IreceivedAMessageOnThisChat = (
+        message.send_to_id === myselfId.value &&
+        message.user_id === props.chatId
+      );
+
+      const ISendAMessage = (
+        message.user_id === myselfId.value &&
+        message.send_to_id === props.chatId
+      );
+
+      if (IreceivedAMessageOnThisChat || ISendAMessage) {
+        messages.value.push(message);
+
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
     });
 
     return {
       messages,
       newMessage,
-      currentUserId,
       isLoading,
+      messagesCurrentPage,
       sendMessage,
       loadMessages,
+      resetMessages,
+      loadMoreMessages,
+      messageContainer,
+      selectedFile,
+      setFileUpload,
+      uploadCurrentFile,
     };
   },
 };
@@ -76,32 +160,67 @@ export default {
 
 <template>
   <main class="box is-responsive">
-    <p v-if="!chatId" class="title is-6">Selecione uma conversa</p>
+    <p v-if="!chatId" class="title is-6">Selecione ou inicie uma conversa</p>
 
     <div v-else class="chat">
 
-      <div v-if="!isLoading" class="chat-messages">
+      <button
+        class="button"
+        @click="loadMoreMessages"
+        v-if="messages.length >= 30"
+      >
+          Buscar mais mensagens
+      </button>
+
+      <div v-if="!isLoading" class="chat-messages" ref="messageContainer">
         <div
           v-for="(message, index) in messages"
           :key="index" 
-          :class="`message ${ message.user_id === currentUserId ? 'author-message' : 'received-message' }`"
+          :class="`message ${ message.user_id === myselfId ? 'author-message' : 'received-message' }`"
         >
+          <template v-if="message.is_media">
+            <a :href="message.text" target="_blank">Abrir mídia</a>
+          </template>
+          <template v-else>
             {{ message.text }}
+          </template>
         </div>
       </div>
+
       <div v-else class="chat-messages"> Carregando mensagens... </div>
 
     </div>
 
-    <input
-      v-if="chatId" 
-      v-model="newMessage" 
-      @keyup.enter="sendMessage"
-      class="input is-hovered"
-      type="text"
-      placeholder="Digite sua mensagem e aperte enter..." 
-    />
-    <button v-if="chatId" @click="sendMessage" class="button is-info">Enviar</button>
+    <div v-if="chatId" class="send-container">
+
+      <div class="file is-primary is-small has-name">
+        <label class="file-label">
+          <input class="file-input" type="file" name="resume" @change="setFileUpload" />
+          <span class="file-cta">
+            <span class="file-icon">
+              <i class="fas fa-upload"></i>
+            </span>
+            <span class="file-label">Escolha um arquivo...</span>
+          </span>
+          <span class="file-name" v-if="selectedFile">{{ selectedFile.name }}</span>
+        </label>
+      </div>
+
+      <button @click="uploadCurrentFile" :disabled="!selectedFile" class="button is-info">
+        Enviar Arquivo
+      </button>
+
+      <input 
+        v-model="newMessage" 
+        @keyup.enter="sendMessage"
+        class="input is-hovered"
+        type="text"
+        placeholder="Digite sua mensagem e aperte enter..." 
+      />
+      <button @click="sendMessage" class="button is-info">Enviar</button>
+
+    </div>
+
   </main>
 </template>
 
@@ -109,9 +228,13 @@ export default {
 main {
   margin: 35px;
   width: 60vw;
+  display: flex;
+  flex-direction: column;
+  min-height: 90vh;
 }
 .chat {
-  max-height: 85vh;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .chat-messages {
@@ -119,6 +242,7 @@ main {
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .message {
@@ -141,6 +265,11 @@ main {
 .author-message {
   align-self: flex-end;
   margin-right: 5px;
+}
+
+.send-container {
+  display: flex;
+  align-items: center;
 }
 
 button {
