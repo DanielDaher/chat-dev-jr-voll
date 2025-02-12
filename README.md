@@ -67,12 +67,12 @@ Desenvolver uma aplicação para troca de mensagens utilizando Rails no backend 
 
 ## Diferenciais implementados:
 
-  - Comunicação em tempo real via WebSocket [✅]
-  - Suporte ao envio de arquivos (permitindo anexos como imagens e documentos pequenos) [✅] 
-  - Implementação de paginação na listagem de mensagens para melhor desempenho [✅] 
-  - Mecanismo de autenticação (por exemplo, JWT) para garantir segurança nas requisições [✅]
-  - Criação de um endpoint de métricas [❌] 
-  - Processamento assíncrono de mensagens utilizando fila de tarefas (exemplo: Redis + Sidekiq) [✅] 
+  - Comunicação em tempo real via WebSocket ✅
+  - Suporte ao envio de arquivos (permitindo anexos como imagens e documentos pequenos) ✅ 
+  - Implementação de paginação na listagem de mensagens para melhor desempenho ✅ 
+  - Mecanismo de autenticação (por exemplo, JWT) para garantir segurança nas requisições ✅
+  - Criação de um endpoint de métricas ❌ 
+  - Processamento assíncrono de mensagens utilizando fila de tarefas (exemplo: Redis + Sidekiq) ✅ 
 
 
 ## Outras funcionalidades implementadas:
