@@ -26,11 +26,13 @@ export default {
 
     const setMyselfId = () => {
       const userId = localStorage.getItem('userIdChatVollDevJr');
+      if (!userId) return makeLogout();
       myselfId.value = Number(userId);
     }
 
     const loadContacts = async () => {
       const token = localStorage.getItem('tokenChatVollDevJr');
+      if (!token || !myselfId.value) return makeLogout();
       currentToken.value = token;
 
       const apiContacts = await getContacts(token);
