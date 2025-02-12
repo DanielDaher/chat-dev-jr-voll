@@ -61,9 +61,9 @@ async function getContactByName(token, name) {
   }
 }
 
-async function getMessagesPaginated(user_id, send_to_id, authToken) {
+async function getMessagesPaginated(user_id, send_to_id, authToken, pageNumber) {
   const axiosConfig = {
-    params: { send_to_id },
+    params: { send_to_id, "page[number]": pageNumber },
     headers: {
       'Authorization': `Bearer ${authToken}`
     }

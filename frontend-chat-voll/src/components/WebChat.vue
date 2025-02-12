@@ -15,23 +15,43 @@ export default {
     const newMessage = ref("");
     const isLoading = ref(true);
     const messageContainer = ref(null);
+    const messagesCurrentPage = ref(1);
 
     const myselfId = computed(() => props.myselfId);
-    const authToken = computed(() => props.currentToken); 
+    const authToken = computed(() => props.currentToken);
+    
+    const resetMessages = () => {
+      messages.value = [];
+      messagesCurrentPage.value = 1;
+    }
+    
+    const loadMoreMessages = async () => {
+      const shouldScrollToBottom = false;
 
-    const loadMessages = async () => {
+      messagesCurrentPage.value = messagesCurrentPage.value + 1;
+      await loadMessages(shouldScrollToBottom);
+    }
+
+    const loadMessages = async (shouldScrollToBottom=true) => {
       isLoading.value = true;
 
       if (props.chatId) {
-        const oldMessages = await getMessagesPaginated(myselfId.value, props.chatId, authToken.value);
-        messages.value = oldMessages;
+        const oldMessages = await getMessagesPaginated(
+          myselfId.value,
+          props.chatId,
+          authToken.value,
+          messagesCurrentPage.value
+        );
+
+        messages.value.unshift(...oldMessages);
       }
 
       isLoading.value = false;
-
-      nextTick(() => {
-        scrollToBottom();
-      });
+      if (shouldScrollToBottom) {
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
     };
 
     const sendMessage = () => {
@@ -66,12 +86,15 @@ export default {
       }
     };
 
+    // eslint-disable-next-line no-unused-vars
     watch(() => props.chatId, (newValue) => {
-      loadMessages(newValue);
+      console.log('waaaaatch');
+      resetMessages();
+      loadMessages();
     });
 
     onMounted(() => {
-      loadMessages(props.chatId);
+      loadMessages();
     });
 
     onBeforeUnmount(() => {
@@ -82,8 +105,11 @@ export default {
       messages,
       newMessage,
       isLoading,
+      messagesCurrentPage,
       sendMessage,
       loadMessages,
+      resetMessages,
+      loadMoreMessages,
       messageContainer,
     };
   },
@@ -96,6 +122,13 @@ export default {
 
     <div v-else class="chat">
 
+      <button
+        class="button"
+        @click="loadMoreMessages"
+        v-if="messages.length >= 30"
+      >
+          Buscar mais mensagens
+      </button>
       <div v-if="!isLoading" class="chat-messages" ref="messageContainer">
         <div
           v-for="(message, index) in messages"

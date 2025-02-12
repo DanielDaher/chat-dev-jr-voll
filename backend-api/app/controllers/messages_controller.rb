@@ -19,16 +19,19 @@ class MessagesController < ApplicationController
   def by_user
     user_id = params[:user_id]
     send_to_id = params[:send_to_id]
+    per_page = params.dig(:size, :number)&.to_i || 30
+    page_number = params.dig(:page, :number)&.to_i || 1
+    skip = (page_number - 1) * per_page
     
     return unless validate_user_id(user_id)
 
     if send_to_id.present?
-      @messages = get_only_with_user_and_send_to_id(user_id, send_to_id)
+      @messages = get_only_with_user_and_send_to_id(user_id, send_to_id, skip, per_page)
     else
-      @messages = get_all_with_user_id(user_id, send_to_id)
+      @messages = get_all_with_user_id(user_id, send_to_id, skip, per_page)
     end
   
-    render json: @messages
+    render json: @messages.reverse
   end
 
   def find_contacts
@@ -92,18 +95,32 @@ class MessagesController < ApplicationController
       true
     end
 
-    def get_all_with_user_id(user_id, send_to_id)
+    def get_all_with_user_id(user_id, send_to_id, skip, per_page)
       messages_from_user_id = Message.where(user_id: user_id)
+        .order(created_at: :desc)
+        .offset(skip)
+        .limit(per_page)
+
       messages_to_user_id = Message.where(send_to_id: user_id)
+        .order(created_at: :desc)
+        .offset(skip)
+        .limit(per_page)
 
       current_messages = messages_from_user_id.or(messages_to_user_id)
   
       return current_messages
     end
 
-    def get_only_with_user_and_send_to_id(user_id, send_to_id)
+    def get_only_with_user_and_send_to_id(user_id, send_to_id, skip, per_page)
       messages_to_user_id = Message.where(user_id: send_to_id, send_to_id: user_id)
+        .order(created_at: :desc)
+        .offset(skip)
+        .limit(per_page)
+
       messages_from_user_id = Message.where(user_id: user_id, send_to_id: send_to_id)
+        .order(created_at: :desc)
+        .offset(skip)
+        .limit(per_page)
 
       current_messages = messages_from_user_id.or(messages_to_user_id)
   
