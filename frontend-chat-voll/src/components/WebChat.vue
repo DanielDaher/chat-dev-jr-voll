@@ -69,46 +69,11 @@ export default {
       }
     };
 
-    socket.on("message", (message) => {
-      const IreceivedAMessageOnThisChat = (
-        message.send_to_id === myselfId.value &&
-        message.user_id === props.chatId
-      );
-
-      const ISendAMessage = (
-        message.user_id === myselfId.value &&
-        message.send_to_id === props.chatId
-      );
-
-      if (IreceivedAMessageOnThisChat || ISendAMessage) {
-        messages.value.push(message);
-
-        nextTick(() => {
-          scrollToBottom();
-        });
-      }
-    });
-
     const scrollToBottom = () => {
       if (messageContainer.value) {
         messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
       }
     };
-
-    // eslint-disable-next-line no-unused-vars
-    watch(() => props.chatId, (newValue) => {
-      resetMessages();
-      loadMessages();
-      resetSelectedFile();
-    });
-
-    onMounted(() => {
-      loadMessages();
-    });
-
-    onBeforeUnmount(() => {
-      socket.disconnect();
-    });
 
     const resetSelectedFile = () => {
       selectedFile.value = null;
@@ -139,6 +104,41 @@ export default {
 
       resetSelectedFile();
     };
+
+    onMounted(() => {
+      loadMessages();
+    });
+
+    onBeforeUnmount(() => {
+      socket.disconnect();
+    });
+
+    // eslint-disable-next-line no-unused-vars
+    watch(() => props.chatId, (newValue) => {
+      resetMessages();
+      loadMessages();
+      resetSelectedFile();
+    });
+
+    socket.on("message", (message) => {
+      const IreceivedAMessageOnThisChat = (
+        message.send_to_id === myselfId.value &&
+        message.user_id === props.chatId
+      );
+
+      const ISendAMessage = (
+        message.user_id === myselfId.value &&
+        message.send_to_id === props.chatId
+      );
+
+      if (IreceivedAMessageOnThisChat || ISendAMessage) {
+        messages.value.push(message);
+
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
+    });
 
     return {
       messages,
