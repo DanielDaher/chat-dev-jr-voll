@@ -162,7 +162,7 @@ export default {
 
 <template>
   <main class="box is-responsive">
-    <p v-if="!chatId" class="title is-6">Selecione uma conversa</p>
+    <p v-if="!chatId" class="title is-6">Selecione ou inicie uma conversa</p>
 
     <div v-else class="chat">
 
@@ -173,6 +173,7 @@ export default {
       >
           Buscar mais mensagens
       </button>
+
       <div v-if="!isLoading" class="chat-messages" ref="messageContainer">
         <div
           v-for="(message, index) in messages"
@@ -187,11 +188,13 @@ export default {
           </template>
         </div>
       </div>
+
       <div v-else class="chat-messages"> Carregando mensagens... </div>
 
     </div>
 
-    <div class="send-container">
+    <div v-if="chatId" class="send-container">
+
       <div class="file is-primary is-small has-name">
         <label class="file-label">
           <input class="file-input" type="file" name="resume" @change="setFileUpload" />
@@ -204,18 +207,20 @@ export default {
           <span class="file-name" v-if="selectedFile">{{ selectedFile.name }}</span>
         </label>
       </div>
+
       <button @click="uploadCurrentFile" :disabled="!selectedFile" class="button is-info">
         Enviar Arquivo
       </button>
-      <input
-        v-if="chatId" 
+
+      <input 
         v-model="newMessage" 
         @keyup.enter="sendMessage"
         class="input is-hovered"
         type="text"
         placeholder="Digite sua mensagem e aperte enter..." 
       />
-      <button v-if="chatId" @click="sendMessage" class="button is-info">Enviar</button>
+      <button @click="sendMessage" class="button is-info">Enviar</button>
+
     </div>
 
   </main>
@@ -225,9 +230,13 @@ export default {
 main {
   margin: 35px;
   width: 60vw;
+  display: flex;
+  flex-direction: column;
+  min-height: 90vh;
 }
 .chat {
-  max-height: 85vh;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .chat-messages {
@@ -235,6 +244,7 @@ main {
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .message {
