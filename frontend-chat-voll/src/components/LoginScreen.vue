@@ -25,7 +25,7 @@ export default {
         return router.push('/dashboard');
       } 
 
-      errorMessage.value = apiData.response.data.error || 'Usuário ou senha inválidos';
+      errorMessage.value = apiData.response.data.error || 'Usuário já existe';
       Swal.fire({
         title: errorMessage.value,
         timer: 2000,
