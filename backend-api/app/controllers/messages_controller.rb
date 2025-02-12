@@ -48,13 +48,22 @@ class MessagesController < ApplicationController
     user_id = params[:user_id]
     return unless validate_user_id(user_id)
 
-    @message = Message.new(message_params)
+    message_data = {
+      text: params[:text],
+      user_id: user_id,
+      send_to_id: params[:send_to_id],
+      is_media: params[:is_media]
+    }
 
-    if @message.save
-      render json: @message, status: :created, location: @message
-    else
-      render json: @message.errors, status: :unprocessable_entity
-    end
+    @message = MessageSaverJob.perform_async(message_data)
+
+    user = User.find_by(id: user_id)
+    send_to = User.find_by(id: params[:send_to_id])
+
+    render json: message_data.merge(
+      user: user&.as_json(only: [:id, :name]),
+      send_to: send_to&.as_json(only: [:id, :name, :email])
+    )
   end
 
   # PATCH/PUT /messages/1

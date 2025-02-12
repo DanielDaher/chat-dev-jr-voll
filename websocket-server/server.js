@@ -20,15 +20,16 @@ io.on('connection', (socket) => {
   console.log('Novo usuário conectado:', socket.id);
 
   socket.on('message', async (data) => {
-    console.log('Mensagem recebida:', data);
+
+    const newMessage = { 
+      text: data.text,
+      user_id: data.userId,
+      send_to_id: data.sendToId,
+      is_media: data.isMedia,
+    };
 
     try {
-      const response = await axios.post('http://localhost:3000/messages', { 
-          text: data.text,
-          user_id: data.userId,
-          send_to_id: data.sendToId,
-          is_media: data.isMedia,
-      }, {
+      const response = await axios.post(`${process.env.RAILS_URL}/messages`, newMessage, {
         headers: {
           'Authorization': `Bearer ${data.token}`,
           'Content-Type': 'application/json',
