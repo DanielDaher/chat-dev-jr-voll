@@ -1,5 +1,5 @@
 # Chat Dev-jr Voll
-  Boas vindas ao Chat Voll, o site onde pode se registrar e conversar com outras pessoas em tempo real!
+  Boas vindas ao Chat Voll, o site onde você pode se registrar e conversar com outras pessoas em tempo real!
 
 ## Objetivo
 
@@ -36,9 +36,9 @@ Desenvolver uma aplicação para troca de mensagens utilizando Rails no backend 
 
  7. Abra outro terminal (para não interromper o backend, que deve continuar rodando), se mantendo na mesma pasta (backend-api) e execute `redis-server`, para ativar o redis. Se estiver tudo certo, ele exibirá, dentre outras mensagens, o texto "Ready to accept connections tcp".
 
- 8. Abra outro terminal (para não interromper o redis, que deve continuar rodando), se mantendo na mesma pasta (backend-api) e execute `bundle exec sidekiq`, para ativar o sidekiq. Se estiver tudo certo, ele exibirá, dentr outras mensagens, o texto "Starting processing, hit Ctrl-C to stop".
+ 8. Abra outro terminal (para não interromper o redis, que deve continuar rodando), se mantendo na mesma pasta (backend-api) e execute `bundle exec sidekiq`, para ativar o sidekiq. Se estiver tudo certo, ele exibirá, dentre outras mensagens, o texto "Starting processing, hit Ctrl-C to stop".
 
- 9. Abra outro terminal (para não interromper o redis, que deve continuar rodando), mas agora é necessário SAIR da pasta backend-api e acessar a pasta "frontend-chat-voll". Faça isso com o comando `cd../frontend-chat-voll`.
+ 9. Abra outro terminal (para não interromper o sidekiq, que deve continuar rodando), mas agora é necessário SAIR da pasta backend-api e acessar a pasta "frontend-chat-voll". Faça isso com o comando `cd../frontend-chat-voll`.
 
  10. Agora, neste terminal da pasta frontend, execute `npm install` para instalar as dependências necessárias do Vue. Em seguida, crie dentro desta pasta, mais um arquivo com o nome `.env` e coloque as mesmas variáveis do arquivo .env.example desta pasta. Ajuste as variáveis que representam tanto a url da API backend, quanto a do websocket (pode manter as mesmas do arquivo .env.example e, se necessário, depois ajuste).
 
@@ -50,7 +50,7 @@ Desenvolver uma aplicação para troca de mensagens utilizando Rails no backend 
 
  14. Agora, crie dentro desta pasta, mais um arquivo com o nome `.env` e coloque as mesmas variáveis do arquivo .env.example desta pasta. Ajuste as variáveis que representam tanto a url de frontend, quanto a do backend (você pode obte-las nos devidos terminais em que estes serviços estão rodando).
 
- 15. EM seguida, execute o comando `npm run start` para ativar o servidor websocket. 
+ 15. Em seguida, execute o comando `npm run start` para ativar o servidor websocket. 
 
 
  16. Agora  você pode abrir seu navegador e digitar a url http://localhost:8080.
@@ -63,16 +63,16 @@ Desenvolver uma aplicação para troca de mensagens utilizando Rails no backend 
 
   2. Backend (parte2): A outra parte do backend foi feita utilizando um micro-serviço em Node.js. Esta partição ficou responsável por lidar com os websockets recebidos do frontend, e acionar o sidekiq (da API Rails citada anteriormente) para que as mensagens sejam cadastradas de forma assíncrona no banco de dados. O objetivo disto é criar uma fila de tarefas, para não sobrecarregar o sistema.
 
-  3. Frontend: O frontend foi feito utilizando Vue.js, contando com várias bibliotecas deste framework, tais como "axios", "bulma", socket.io" e "sweet-alert". Respectivamente, estas libs tratam de fazer requisições ao backend, estilizar os componentes com um css mais refinado, lidar com envio e recepção de mensagens em tempo real, e, por último, alertar o usuário (de forma sutil) de ações que não funcionaram (por exemplo, ao tentar cadastrar um usuário que já existe).
+  3. Frontend: O frontend foi feito utilizando Vue.js, contando com várias bibliotecas deste framework, tais como "axios", "bulma", "socket.io" e "sweet-alert". Respectivamente, estas libs tratam de fazer requisições ao backend, estilizar os componentes com um css mais refinado, lidar com envio e recepção de mensagens em tempo real, e, por último, alertar o usuário (de forma sutil) de ações que não funcionaram (por exemplo, ao tentar cadastrar um usuário que já existe).
 
 ## Diferenciais implementados:
 
-  - Comunicação em tempo real via WebSocket [V]
-  - Suporte ao envio de arquivos (permitindo anexos como imagens e documentos pequenos) [V] 
-  - Implementação de paginação na listagem de mensagens para melhor desempenho [V] 
-  - Mecanismo de autenticação (por exemplo, JWT) para garantir segurança nas requisições [V]
-  - Criação de um endpoint de métricas [X] 
-  - Processamento assíncrono de mensagens utilizando fila de tarefas (exemplo: Redis + Sidekiq) [V] 
+  - Comunicação em tempo real via WebSocket [✅]
+  - Suporte ao envio de arquivos (permitindo anexos como imagens e documentos pequenos) [✅] 
+  - Implementação de paginação na listagem de mensagens para melhor desempenho [✅] 
+  - Mecanismo de autenticação (por exemplo, JWT) para garantir segurança nas requisições [✅]
+  - Criação de um endpoint de métricas [❌] 
+  - Processamento assíncrono de mensagens utilizando fila de tarefas (exemplo: Redis + Sidekiq) [✅] 
 
 
 ## Outras funcionalidades implementadas:
@@ -83,12 +83,12 @@ Desenvolver uma aplicação para troca de mensagens utilizando Rails no backend 
 
   - Iniciar conversa: Caso não tenha nenhum contato ainda, é possível iniciar uma nova conversa. Basta preencher o input com o nome do usuário, e apertar enter (ou clicar em "iniciar conversa"). Ao efetuar esta ação, o sistema buscará por um usuário com o valor digitado, sendo que, os nomes, neste aplicação, são únicos. Caso encontre algum, o chat permitirá que novas mensagens sejam enviadas. Caso não encontre, então um alerta sutil aparece na tela, informando que o usuário não foi encontrado.
 
-  - Lista de contatos (conversas): A lista de contatos apresenta todos os usuários com o qual você interagiu. Ao clicar em um deles, o chat apresenta o histórico da conversa e o input para enviar novas mensagens (ou arquivos). Além disso, o contato selecionado apresenta uma cor de fundo diferente, para facilitar o entendimento de com quem se está conversando.
+  - Lista de contatos (conversas): A lista de contatos apresenta todos os usuários com quem você interagiu. Ao clicar em um deles, o chat apresenta o histórico da conversa e o input para enviar novas mensagens (ou arquivos). Além disso, o contato selecionado apresenta uma cor de fundo diferente, para facilitar o entendimento de com quem se está conversando.
 
   - Notificações: Ao receber uma nova mensagem, aparecem três exclamações (!!!) próximas ao nome do contato que as enviou. Clicando na conversa, a notificação some.
 
   - Enviar: Uma vez que o chat está aberto, é possível enviar mensagens de texto ou arquivos. Os arquivos são exibidos com o link "Abrir Mídia", que abrirá o link do arquivo em uma nova aba do navegador.
 
-  - Buscar mais mensagens: O chat sempre busca as últimas 30 mensagens de uma conversa (pois o backend está sempre paginando, para não sobrecarregar a resposta). Porém, quando já existem 30 mensagens apresentadas na tela, aparece o botão "Buscar mais mensagens". Clicando nele, o sistema parte para a próxima página da paginação, buscando 30 mensagens anteriores a esta. É possível buscar infinitamente, clicando no botão. Caso todas as mensagens já estejam na tela, o botão continua funcionando, mas seu retorno é vazio.
+  - Buscar mais mensagens: O chat sempre busca as últimas 30 mensagens de uma conversa (pois o backend está sempre paginando, para não sobrecarregar a resposta). Porém, quando já existem 30 mensagens apresentadas na tela, aparece o botão "Buscar mais mensagens". Clicando nele, o sistema parte para a próxima página da paginação, buscando 30 mensagens anteriores a estas. É possível buscar infinitamente, clicando no botão. Caso todas as mensagens já estejam na tela, o botão continua funcionando, mas seu retorno é vazio.
 
   - Scroll To Top/Bottom: Sempre que um chat abre, ou uma mensagem nova chega no mesmo, o scroll da página vai para o ponto mais baixo possível, permitindo que o conteúdo mais recente seja lido. Porém, caso o botão "Buscar mais mensagens" seja acionado, acontece o oposto. O scroll vai para o ponto mais acima possível, exibindo o conteúdo mais antigo da conversa.
