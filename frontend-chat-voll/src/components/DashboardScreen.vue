@@ -84,7 +84,7 @@ export default {
         const socketContact = user.id === myselfId.value ? send_to : user;
   
         const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
-        const newContact = { user };
+        const newContact = user;
   
         const CurentChatIsOpenOnMyScreen = currentChatId.value === user.id;
         
@@ -94,7 +94,7 @@ export default {
         }
         
         if (!oldContact) {
-          contacts.value.push(newContact);
+          contacts.value.push({ ...newContact, newMessage: true });
         }
       }
 
