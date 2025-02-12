@@ -131,6 +131,7 @@ export default {
         <input 
           v-model="newContactName" 
           class="input"
+          @keyup.enter="startNewChat"
           placeholder="Digite o nome do contato"
         />
         <button 
