@@ -3,19 +3,6 @@ class MessagesController < ApplicationController
   before_action :set_message, only: %i[ update destroy ]
   before_action :authenticate_user
 
-  # GET /messages
-  # def index
-  #   @messages = Message.all
-
-  #   render json: @messages
-  # end
-
-  # GET /messages/1
-  # def show
-  #   render json: @message
-  # end
-
-  # GET /messages/user_id
   def by_user
     user_id = params[:user_id]
     send_to_id = params[:send_to_id]
@@ -43,7 +30,6 @@ class MessagesController < ApplicationController
     render json: @interacted_users
   end
 
-  # POST /messages
   def create
     user_id = params[:user_id]
     return unless validate_user_id(user_id)
@@ -66,7 +52,6 @@ class MessagesController < ApplicationController
     )
   end
 
-  # PATCH/PUT /messages/1
   def update
     if @message.update(message_params)
       render json: @message
@@ -75,18 +60,15 @@ class MessagesController < ApplicationController
     end
   end
 
-  # DELETE /messages/1
   def destroy
     @message.destroy!
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
     def set_message
       @message = Message.find(params.expect(:id))
     end
 
-    # Only allow a list of trusted parameters through.
     def message_params
       params.require(:message).permit(:text, :user_id, :name, :send_to_id, :is_media)
     end

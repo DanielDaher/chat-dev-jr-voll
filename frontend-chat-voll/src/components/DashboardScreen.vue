@@ -26,7 +26,6 @@ export default {
 
     const setMyselfId = () => {
       const userId = localStorage.getItem('userIdChatVollDevJr');
-      console.log('user id : ', userId)
       myselfId.value = Number(userId);
     }
 

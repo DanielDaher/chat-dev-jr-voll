@@ -97,7 +97,6 @@ export default {
 
     // eslint-disable-next-line no-unused-vars
     watch(() => props.chatId, (newValue) => {
-      console.log('waaaaatch');
       resetMessages();
       loadMessages();
       resetSelectedFile();
@@ -126,7 +125,6 @@ export default {
       formData.append("file", selectedFile.value);
 
       const response = await uploadFile(myselfId.value, props.chatId, authToken.value, formData);
-
       console.log('response:   ', response)
 
       const socketData = { 

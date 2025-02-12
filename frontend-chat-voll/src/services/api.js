@@ -31,7 +31,6 @@ async function getContacts(token) {
     }
   };
   const apiUrl = `${axios.defaults.baseURL}/find_contacts`;
-  console.log('api url: ', apiUrl)
 
   try {
     const APIResponse = await axios.get(apiUrl, axiosConfig);
@@ -43,7 +42,6 @@ async function getContacts(token) {
 }
 
 async function getContactByName(token, name) {
-  console.log('oh o token aqui: ', token);
   const axiosConfig = {
     params: { name },
     headers: {
