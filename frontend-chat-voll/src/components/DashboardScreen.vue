@@ -26,11 +26,13 @@ export default {
 
     const setMyselfId = () => {
       const userId = localStorage.getItem('userIdChatVollDevJr');
+      if (!userId) return makeLogout();
       myselfId.value = Number(userId);
     }
 
     const loadContacts = async () => {
       const token = localStorage.getItem('tokenChatVollDevJr');
+      if (!token || !myselfId.value) return makeLogout();
       currentToken.value = token;
 
       const apiContacts = await getContacts(token);
@@ -82,7 +84,7 @@ export default {
         const socketContact = user.id === myselfId.value ? send_to : user;
   
         const oldContact = contacts.value.find((contact) => contact.name === socketContact.name);
-        const newContact = { user };
+        const newContact = user;
   
         const CurentChatIsOpenOnMyScreen = currentChatId.value === user.id;
         
@@ -92,7 +94,7 @@ export default {
         }
         
         if (!oldContact) {
-          contacts.value.push(newContact);
+          contacts.value.push({ ...newContact, newMessage: true });
         }
       }
 
