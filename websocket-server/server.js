@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
           text: data.text,
           user_id: data.userId,
           send_to_id: data.sendToId,
+          is_media: data.isMedia,
       }, {
         headers: {
           'Authorization': `Bearer ${data.token}`,

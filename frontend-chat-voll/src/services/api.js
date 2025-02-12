@@ -79,4 +79,21 @@ async function getMessagesPaginated(user_id, send_to_id, authToken, pageNumber) 
   }
 }
 
-export { loginOrCreateUser, getContacts, getMessagesPaginated, getContactByName };
+async function uploadFile(user_id, send_to_id, authToken, formData) {
+  const axiosConfig = {
+    params: { send_to_id, user_id },
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  };
+  const apiUrl = `${axios.defaults.baseURL}/uploads`;
+  try {
+    const response = await axios.post(apiUrl, formData, axiosConfig);
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro no upload:", error);
+  }
+}
+
+export { loginOrCreateUser, getContacts, getMessagesPaginated, getContactByName, uploadFile };

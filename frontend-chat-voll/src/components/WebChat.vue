@@ -1,6 +1,6 @@
 <script>
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
-import { getMessagesPaginated } from '../services/api';
+import { getMessagesPaginated, uploadFile } from '../services/api';
 import io from "socket.io-client";
 
 export default {
@@ -16,6 +16,7 @@ export default {
     const isLoading = ref(true);
     const messageContainer = ref(null);
     const messagesCurrentPage = ref(1);
+    const selectedFile = ref(null);
 
     const myselfId = computed(() => props.myselfId);
     const authToken = computed(() => props.currentToken);
@@ -69,8 +70,16 @@ export default {
     };
 
     socket.on("message", (message) => {
-      const IreceivedAMessageOnThisChat = message.send_to_id === myselfId.value && message.user_id === props.chatId;
-      const ISendAMessage = message.user_id === myselfId.value && message.send_to_id === props.chatId;
+      const IreceivedAMessageOnThisChat = (
+        message.send_to_id === myselfId.value &&
+        message.user_id === props.chatId
+      );
+
+      const ISendAMessage = (
+        message.user_id === myselfId.value &&
+        message.send_to_id === props.chatId
+      );
+
       if (IreceivedAMessageOnThisChat || ISendAMessage) {
         messages.value.push(message);
 
@@ -91,6 +100,7 @@ export default {
       console.log('waaaaatch');
       resetMessages();
       loadMessages();
+      resetSelectedFile();
     });
 
     onMounted(() => {
@@ -100,6 +110,37 @@ export default {
     onBeforeUnmount(() => {
       socket.disconnect();
     });
+
+    const resetSelectedFile = () => {
+      selectedFile.value = null;
+    }
+
+    const setFileUpload = (event) => {
+      selectedFile.value = event.target.files[0];
+    };
+
+    const uploadCurrentFile = async () => {
+      if (!selectedFile.value) return;
+
+      const formData = new FormData();
+      formData.append("file", selectedFile.value);
+
+      const response = await uploadFile(myselfId.value, props.chatId, authToken.value, formData);
+
+      console.log('response:   ', response)
+
+      const socketData = { 
+        text: response.url,
+        token: authToken.value,
+        userId: myselfId.value,
+        sendToId: props.chatId,
+        isMedia: true,
+      }
+        
+      socket.emit("message", socketData);
+
+      resetSelectedFile();
+    };
 
     return {
       messages,
@@ -111,6 +152,9 @@ export default {
       resetMessages,
       loadMoreMessages,
       messageContainer,
+      selectedFile,
+      setFileUpload,
+      uploadCurrentFile,
     };
   },
 };
@@ -135,22 +179,45 @@ export default {
           :key="index" 
           :class="`message ${ message.user_id === myselfId ? 'author-message' : 'received-message' }`"
         >
+          <template v-if="message.is_media">
+            <a :href="message.text" target="_blank">Abrir mídia</a>
+          </template>
+          <template v-else>
             {{ message.text }}
+          </template>
         </div>
       </div>
       <div v-else class="chat-messages"> Carregando mensagens... </div>
 
     </div>
 
-    <input
-      v-if="chatId" 
-      v-model="newMessage" 
-      @keyup.enter="sendMessage"
-      class="input is-hovered"
-      type="text"
-      placeholder="Digite sua mensagem e aperte enter..." 
-    />
-    <button v-if="chatId" @click="sendMessage" class="button is-info">Enviar</button>
+    <div class="send-container">
+      <div class="file is-primary is-small has-name">
+        <label class="file-label">
+          <input class="file-input" type="file" name="resume" @change="setFileUpload" />
+          <span class="file-cta">
+            <span class="file-icon">
+              <i class="fas fa-upload"></i>
+            </span>
+            <span class="file-label">Escolha um arquivo...</span>
+          </span>
+          <span class="file-name" v-if="selectedFile">{{ selectedFile.name }}</span>
+        </label>
+      </div>
+      <button @click="uploadCurrentFile" :disabled="!selectedFile" class="button is-info">
+        Enviar Arquivo
+      </button>
+      <input
+        v-if="chatId" 
+        v-model="newMessage" 
+        @keyup.enter="sendMessage"
+        class="input is-hovered"
+        type="text"
+        placeholder="Digite sua mensagem e aperte enter..." 
+      />
+      <button v-if="chatId" @click="sendMessage" class="button is-info">Enviar</button>
+    </div>
+
   </main>
 </template>
 
@@ -190,6 +257,11 @@ main {
 .author-message {
   align-self: flex-end;
   margin-right: 5px;
+}
+
+.send-container {
+  display: flex;
+  align-items: center;
 }
 
 button {
